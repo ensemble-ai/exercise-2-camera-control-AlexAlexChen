@@ -1,81 +1,60 @@
 class_name PositionLockLerpCamera
 extends CameraControllerBase
 
+@export var follow_speed: float = 1.0
+@export var catchup_speed: float = 5.0
+@export var leash_distance: float = 10.0
 
-@export var box_width:float = 10.0
-@export var box_height:float = 10.0
+var immediate_mesh: ImmediateMesh = ImmediateMesh.new()
+var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 
+func _ready():
+	super._ready()
+	mesh_instance.mesh = immediate_mesh
+	add_child(mesh_instance)
 
-func _ready() -> void:
-	super()
-	position = target.position
+func _process(delta):
+	super._process(delta)
 	
+	if target:
+		# 计算相机中心与目标之间的距离
+		var distance_to_target = position.distance_to(target.global_position)
+		
+		# 如果距离超出 `leash_distance`，使用 `catchup_speed`；否则使用 `follow_speed`
+		var speed: float
+		if distance_to_target > leash_distance:
+			speed = catchup_speed
+		else:
+			speed = follow_speed
 
-func _process(delta: float) -> void:
-	if !current:
-		return
-	
+
+		# 通过插值平滑地朝向 target
+		position = position.lerp(target.global_position, speed * delta)
+
+		# 保持相机的高度
+		position.y = target.global_position.y + dist_above_target
+
+	# 如果 draw_camera_logic 为真，绘制辅助的十字线
 	if draw_camera_logic:
 		draw_logic()
-	
-	var tpos = target.global_position
-	var cpos = global_position
-	
-	#boundary checks
-	#left
-	var diff_between_left_edges = (tpos.x - target.WIDTH / 2.0) - (cpos.x - box_width / 2.0)
-	if diff_between_left_edges < 0:
-		global_position.x += diff_between_left_edges
-	#right
-	var diff_between_right_edges = (tpos.x + target.WIDTH / 2.0) - (cpos.x + box_width / 2.0)
-	if diff_between_right_edges > 0:
-		global_position.x += diff_between_right_edges
-	#top
-	var diff_between_top_edges = (tpos.z - target.HEIGHT / 2.0) - (cpos.z - box_height / 2.0)
-	if diff_between_top_edges < 0:
-		global_position.z += diff_between_top_edges
-	#bottom
-	var diff_between_bottom_edges = (tpos.z + target.HEIGHT / 2.0) - (cpos.z + box_height / 2.0)
-	if diff_between_bottom_edges > 0:
-		global_position.z += diff_between_bottom_edges
-		
-	super(delta)
-
 
 func draw_logic() -> void:
-	var mesh_instance := MeshInstance3D.new()
-	var immediate_mesh := ImmediateMesh.new()
-	var material := ORMMaterial3D.new()
+	immediate_mesh.clear_surfaces()
 	
-	mesh_instance.mesh = immediate_mesh
-	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	
-	var left:float = -box_width / 2
-	var right:float = box_width / 2
-	var top:float = -box_height / 2
-	var bottom:float = box_height / 2
-	
+	var cross_size: float = 5.0
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = Color.WHITE
+
 	immediate_mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
-	immediate_mesh.surface_add_vertex(Vector3(right, 0, top))
-	immediate_mesh.surface_add_vertex(Vector3(right, 0, bottom))
 	
-	immediate_mesh.surface_add_vertex(Vector3(right, 0, bottom))
-	immediate_mesh.surface_add_vertex(Vector3(left, 0, bottom))
-	
-	immediate_mesh.surface_add_vertex(Vector3(left, 0, bottom))
-	immediate_mesh.surface_add_vertex(Vector3(left, 0, top))
-	
-	immediate_mesh.surface_add_vertex(Vector3(left, 0, top))
-	immediate_mesh.surface_add_vertex(Vector3(right, 0, top))
+	# 绘制位于相机中心的十字线
+	immediate_mesh.surface_add_vertex(Vector3(-cross_size, 0, 0.1))
+	immediate_mesh.surface_add_vertex(Vector3(cross_size, 0, 0.1))
+	immediate_mesh.surface_add_vertex(Vector3(0, -cross_size, 0.1))
+	immediate_mesh.surface_add_vertex(Vector3(0, cross_size, 0.1))
+
 	immediate_mesh.surface_end()
 
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color.BLACK
-	
-	add_child(mesh_instance)
-	mesh_instance.global_transform = Transform3D.IDENTITY
-	mesh_instance.global_position = Vector3(global_position.x, target.global_position.y, global_position.z)
-	
-	#mesh is freed after one update of _process
-	await get_tree().process_frame
-	mesh_instance.queue_free()
+	# 将十字线的位置保持在相机中心
+	mesh_instance.global_transform = global_transform
