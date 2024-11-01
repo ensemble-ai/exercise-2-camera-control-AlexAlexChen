@@ -5,6 +5,7 @@ var immediate_mesh: ImmediateMesh = ImmediateMesh.new()
 var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 
 func _ready():
+	draw_camera_logic = true
 	mesh_instance.mesh = immediate_mesh
 	add_child(mesh_instance)
 

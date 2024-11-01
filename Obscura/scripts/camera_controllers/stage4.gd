@@ -1,8 +1,8 @@
 class_name LeadCameraController
 extends CameraControllerBase
 
-@export var lead_speed: float = 1.0
-@export var catchup_delay_duration: float = 0.1
+@export var lead_speed: float = 2.0
+@export var catchup_delay_duration: float = 0.01
 @export var catchup_speed: float = 5.0
 @export var leash_distance: float = 10.0
 
@@ -49,22 +49,62 @@ func _process(delta):
 		draw_logic()
 
 func draw_logic() -> void:
-	immediate_mesh.clear_surfaces()
+	var mesh_instance := MeshInstance3D.new()
+	var immediate_mesh := ImmediateMesh.new()
+	var material := ORMMaterial3D.new()
+	
+	mesh_instance.mesh = immediate_mesh
+	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	
+	var left:float = -10 / 2 + 0.28
+	var right:float = 10 / 2 + 0.30
+	var top:float = 0.01
+	var bottom:float = -0.01
 
-	var cross_size: float = 5.0
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color.WHITE
-
+	
+	# Horizontal line
 	immediate_mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
-
-	# Draw a cross centered on the camera
-	immediate_mesh.surface_add_vertex(Vector3(-cross_size, 0, 0.1))
-	immediate_mesh.surface_add_vertex(Vector3(cross_size, 0, 0.1))
-	immediate_mesh.surface_add_vertex(Vector3(0, -cross_size, 0.1))
-	immediate_mesh.surface_add_vertex(Vector3(0, cross_size, 0.1))
-
+	immediate_mesh.surface_add_vertex(Vector3(right, 0, top))
+	immediate_mesh.surface_add_vertex(Vector3(right, 0, bottom))
+	
+	immediate_mesh.surface_add_vertex(Vector3(right, 0, bottom))
+	immediate_mesh.surface_add_vertex(Vector3(left, 0, bottom))
+	
+	immediate_mesh.surface_add_vertex(Vector3(left, 0, bottom))
+	immediate_mesh.surface_add_vertex(Vector3(left, 0, top))
+	
+	immediate_mesh.surface_add_vertex(Vector3(left, 0, top))
+	immediate_mesh.surface_add_vertex(Vector3(right, 0, top))
+	immediate_mesh.surface_end()
+	
+	
+	var left_v:float = 0
+	var right_v:float = 0
+	var top_v:float = 5
+	var bottom_v:float = -5
+	
+	# Vertical line
+	immediate_mesh.surface_begin(Mesh.PRIMITIVE_LINES, material)
+	immediate_mesh.surface_add_vertex(Vector3(right_v, 0, top_v))
+	immediate_mesh.surface_add_vertex(Vector3(right_v, 0, bottom_v))
+	
+	immediate_mesh.surface_add_vertex(Vector3(right_v, 0, bottom_v))
+	immediate_mesh.surface_add_vertex(Vector3(left_v, 0, bottom_v))
+	
+	immediate_mesh.surface_add_vertex(Vector3(left_v, 0, bottom_v))
+	immediate_mesh.surface_add_vertex(Vector3(left_v, 0, top_v))
+	
+	immediate_mesh.surface_add_vertex(Vector3(left_v, 0, top_v))
+	immediate_mesh.surface_add_vertex(Vector3(right_v, 0, top_v))
 	immediate_mesh.surface_end()
 
-	# Keep the cross centered at the camera's position
-	mesh_instance.global_transform = global_transform
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = Color.WHITE
+	
+	add_child(mesh_instance)
+	mesh_instance.global_transform = Transform3D.IDENTITY
+	mesh_instance.global_position = Vector3(global_position.x, target.global_position.y, global_position.z)
+	
+	#mesh is freed after one update of _process
+	await get_tree().process_frame
+	mesh_instance.queue_free()
