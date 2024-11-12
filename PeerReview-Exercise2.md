@@ -131,7 +131,7 @@ Please refer to the first code review template on how to do a permalink.
 
 #### Style Guide Infractions ####
 * [Didn't surround function definitions with 2 blank lines](https://github.com/ensemble-ai/exercise-2-camera-control-AlexAlexChen/blob/c6f8548179ed8d01cbf9a04b63f769f018f6e86b/Obscura/scripts/camera_controllers/stage1.gd#L11)
-* [Script file names are not snake case]
+* Script file names are not snake case
 * [Known variable types should be statically typed](https://github.com/ensemble-ai/exercise-2-camera-control-AlexAlexChen/blob/c6f8548179ed8d01cbf9a04b63f769f018f6e86b/Obscura/scripts/camera_controllers/stage2.gd#L28)
 * [Prefer to use not, and, or rather than &&, ||, !](https://github.com/ensemble-ai/exercise-2-camera-control-AlexAlexChen/blob/c6f8548179ed8d01cbf9a04b63f769f018f6e86b/Obscura/scripts/camera_controllers/stage3.gd#L16)
 
